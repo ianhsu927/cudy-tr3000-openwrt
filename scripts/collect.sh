@@ -6,7 +6,7 @@ OUTPUT="$ROOT/output"
 mkdir -p "$OUTPUT"
 shopt -s nullglob
 # Exact suffixes avoid collecting 256MB or U-Boot-modified-layout images.
-images=("$TARGET"/*-cudy_tr3000-v1-sysupgrade.bin)
+images=("$TARGET"/*-cudy_tr3000-v1-squashfs-sysupgrade.bin)
 manifests=("$TARGET"/*-cudy_tr3000-v1.manifest)
 (( ${#images[@]} == 1 )) || { echo 'Expected exactly one TR3000 v1 sysupgrade image'; exit 1; }
 (( ${#manifests[@]} == 1 )) || { echo 'Expected exactly one TR3000 v1 manifest'; exit 1; }

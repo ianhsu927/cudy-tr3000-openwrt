@@ -21,7 +21,7 @@
 
 成功后下载 `cudy-tr3000-v1-128mb-运行编号` Artifact，保留 30 天，其中包括：
 
-- `*-cudy_tr3000-v1-sysupgrade.bin`，以及上游生成的 initramfs 镜像。
+- `*-cudy_tr3000-v1-squashfs-sysupgrade.bin`，以及上游生成的 initramfs 镜像。
 - `sha256sums`、该机型软件包清单、`profiles.json`。
 - `build.config`、`sources.txt`、`custom-plugin-sources.txt`、`openclash-core.txt` 和编译日志。
 - `matching-packages.tar.gz`：本次实际编译的软件包，包括与固件内核 ABI 匹配的模块；并非全部可选包。
