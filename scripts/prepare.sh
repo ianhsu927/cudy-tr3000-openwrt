@@ -11,6 +11,17 @@ grep -Fxq 'TARGET_DEVICES += cudy_tr3000-v1' target/linux/mediatek/image/filogic
 sed -i '1i src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git;main' feeds.conf.default
 sed -i '1i src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main' feeds.conf.default
 ./scripts/feeds update -a
+# Xray 26.10 requires Go 1.27; the stable feed still defaults to Go 1.26.
+# Select its existing versioned host toolchain without changing other packages.
+xray_makefile=feeds/passwall_packages/xray-core/Makefile
+test -f feeds/packages/lang/golang/golang1.27/Makefile
+test "$(grep -c '^PKG_BUILD_DEPENDS' "$xray_makefile")" -eq 1
+if grep -Fxq 'PKG_BUILD_DEPENDS:=golang/host' "$xray_makefile"; then
+  sed -i 's|^PKG_BUILD_DEPENDS:=golang/host$|PKG_BUILD_DEPENDS:=golang1.27/host|' "$xray_makefile"
+fi
+grep -Fxq 'PKG_BUILD_DEPENDS:=golang1.27/host' "$xray_makefile"
+# Refresh cached package metadata after the local feed adjustment.
+./scripts/feeds update -i passwall_packages
 ./scripts/feeds install -a
 ./scripts/feeds uninstall luci-theme-argon
 git clone --depth 1 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
@@ -45,6 +56,7 @@ add_custom_package luci-app-net-doctor be42a485885ae112759702556d9961228559103c 
   printf 'OpenWrt branch: '; git branch --show-current
   printf 'PassWall packages: '; git -C feeds/passwall_packages rev-parse HEAD
   printf 'PassWall LuCI: '; git -C feeds/passwall_luci rev-parse HEAD
+  printf 'Xray host toolchain override: golang1.27/host (OpenWrt packages feed)\n'
   printf 'Argon: '; git -C package/luci-theme-argon rev-parse HEAD
   printf 'Argon config: '; git -C package/luci-app-argon-config rev-parse HEAD
   cat "$custom_sources"
