@@ -10,9 +10,13 @@ images=("$TARGET"/*-cudy_tr3000-v1-squashfs-sysupgrade.bin)
 manifests=("$TARGET"/*-cudy_tr3000-v1.manifest)
 (( ${#images[@]} == 1 )) || { echo 'Expected exactly one TR3000 v1 sysupgrade image'; exit 1; }
 (( ${#manifests[@]} == 1 )) || { echo 'Expected exactly one TR3000 v1 manifest'; exit 1; }
-for package in kernel luci luci-ssl luci-theme-bootstrap luci-theme-argon luci-app-argon-config luci-app-openclash luci-app-usb-tethering luci-app-net-doctor luci-app-sqm sqm-scripts kmod-ifb kmod-sched-core kmod-sched-cake luci-app-nlbwmon nlbwmon kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware; do
+for package in kernel luci luci-ssl luci-theme-bootstrap luci-theme-argon luci-app-argon-config luci-app-passwall xray-core luci-app-usb-tethering luci-app-net-doctor luci-app-sqm sqm-scripts kmod-ifb kmod-sched-core kmod-sched-cake luci-app-nlbwmon nlbwmon kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware; do
   grep -q "^${package} - " "${manifests[0]}" || { echo "Required package missing from firmware: $package"; exit 1; }
 done
+if grep -Eq '^luci-app-openclash - ' "${manifests[0]}"; then
+  echo 'OpenClash unexpectedly included'
+  exit 1
+fi
 if grep -Eq '^luci-app-tr3600-(manager|led|fan) - ' "${manifests[0]}"; then
   echo 'TR3600-specific plugin present in TR3000 firmware'
   exit 1
