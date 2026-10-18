@@ -9,8 +9,13 @@ cd "$ROOT/openwrt"
 grep -Fxq 'TARGET_DEVICES += cudy_tr3000-v1' target/linux/mediatek/image/filogic.mk
 ./scripts/feeds update -a
 ./scripts/feeds install -a
-git clone --depth 1 https://github.com/vernesong/OpenClash.git "$ROOT/OpenClash"
-cp -a "$ROOT/OpenClash/luci-app-openclash" package/
+cat >> feeds.conf.default <<'EOF'
+src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages.git
+src-git passwall_luci https://github.com/xiaorouji/openwrt-passwall.git
+EOF
+./scripts/feeds update passwall_packages passwall_luci
+./scripts/feeds install -a -p passwall_packages
+./scripts/feeds install -a -p passwall_luci
 ./scripts/feeds uninstall luci-theme-argon
 git clone --depth 1 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
 ./scripts/feeds uninstall luci-app-argon-config
@@ -36,29 +41,14 @@ add_custom_package() {
 add_custom_package luci-app-usb-tethering a752832a17261a6ccf2474defa6b3e5d7848427b luci-app-usb-tethering luci-app-usb-tethering
 add_custom_package luci-app-net-doctor be42a485885ae112759702556d9961228559103c . luci-app-net-doctor
 
-# Bundle the same ARM64 Meta core distributed by OpenClash.
-mkdir -p files/etc/openclash/core
-core_revision=$(git ls-remote https://github.com/vernesong/OpenClash.git refs/heads/core | awk '{print $1}')
-[[ "$core_revision" =~ ^[0-9a-f]{40}$ ]] || { echo 'Cannot resolve OpenClash core revision'; exit 1; }
-core_url="https://raw.githubusercontent.com/vernesong/OpenClash/$core_revision/master/meta/clash-linux-arm64.tar.gz"
-curl --fail --location --retry 3 "$core_url" -o "$ROOT/output/openclash-core.tar.gz"
-tar -xOzf "$ROOT/output/openclash-core.tar.gz" clash > files/etc/openclash/core/clash_meta
-test -s files/etc/openclash/core/clash_meta
-file files/etc/openclash/core/clash_meta | grep -q 'ELF 64-bit.*ARM aarch64'
-chmod 0755 files/etc/openclash/core/clash_meta
-{
-  printf 'OpenClash core revision: %s\n' "$core_revision"
-  printf 'OpenClash core URL: %s\n' "$core_url"
-  sha256sum "$ROOT/output/openclash-core.tar.gz" files/etc/openclash/core/clash_meta
-} > "$ROOT/output/openclash-core.txt"
-rm "$ROOT/output/openclash-core.tar.gz"
 
 {
   printf 'Reference workflow: ianhsu927/cudy-tr3600-openwrt @ 41596930acb13b0f259203de12aa09f50f10eed3\n'
   printf 'Profile: cudy_tr3000-v1 (128MB, stock partition layout)\n'
   printf 'OpenWrt: '; git rev-parse HEAD
   printf 'OpenWrt branch: '; git branch --show-current
-  printf 'OpenClash: '; git -C "$ROOT/OpenClash" rev-parse HEAD
+  printf 'PassWall packages: '; git -C feeds/passwall_packages rev-parse HEAD
+  printf 'PassWall LuCI: '; git -C feeds/passwall_luci rev-parse HEAD
   printf 'Argon: '; git -C package/luci-theme-argon rev-parse HEAD
   printf 'Argon config: '; git -C package/luci-app-argon-config rev-parse HEAD
   cat "$custom_sources"
