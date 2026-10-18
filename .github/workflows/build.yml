@@ -7,7 +7,7 @@ on:
   schedule:
     - cron: '0 20 * * 5'
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: tr3000-${{ github.ref }}
   cancel-in-progress: false
@@ -45,3 +45,27 @@ jobs:
           path: output/
           retention-days: 30
           if-no-files-found: warn
+
+      - name: Publish successful firmware release
+        if: success() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tag="tr3000-v1-build-${RUN_ID}"
+          test -n "$(find output -maxdepth 1 -name '*-cudy_tr3000-v1-squashfs-sysupgrade.bin' -print -quit)"
+          test -s output/sha256sums
+          test -s output/matching-packages.tar.gz
+          gh release create "$tag" \
+            output/*-cudy_tr3000-v1-squashfs-sysupgrade.bin \
+            output/*-cudy_tr3000-v1.manifest \
+            output/profiles.json \
+            output/sha256sums \
+            output/matching-packages.tar.gz \
+            --target "$COMMIT_SHA" \
+            --title "TR3000 v1 OpenWrt build #${RUN_NUMBER}" \
+            --notes "Automated OpenWrt 25.12 build for Cudy TR3000 v1 (stock 128MB layout). Commit: ${COMMIT_SHA}. Actions run: https://github.com/${GH_REPO}/actions/runs/${RUN_ID}. Verify checksums and device layout before flashing."
