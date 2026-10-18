@@ -7,15 +7,11 @@ cd "$ROOT/openwrt"
 # TR3000 v1 (128MB, stock partition layout) is supported by this branch.
 # Do not apply TR3600 device, fan, LED, MAC or wireless-default patches.
 grep -Fxq 'TARGET_DEVICES += cudy_tr3000-v1' target/linux/mediatek/image/filogic.mk
+# Register PassWall feeds before updating and installing feeds.
+sed -i '1i src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git;main' feeds.conf.default
+sed -i '1i src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main' feeds.conf.default
 ./scripts/feeds update -a
 ./scripts/feeds install -a
-cat >> feeds.conf.default <<'EOF'
-src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages.git
-src-git passwall_luci https://github.com/xiaorouji/openwrt-passwall.git
-EOF
-./scripts/feeds update passwall_packages passwall_luci
-./scripts/feeds install -a -p passwall_packages
-./scripts/feeds install -a -p passwall_luci
 ./scripts/feeds uninstall luci-theme-argon
 git clone --depth 1 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
 ./scripts/feeds uninstall luci-app-argon-config
